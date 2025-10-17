@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MindBody - Exercise</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; font-family:"Poppins", Arial, sans-serif; }
+    body { background: linear-gradient(135deg,#f0f4f7,#dfe9f3); color:#2c3e50; }
+    .container { display:flex; min-height:100vh; }
+    .sidebar { background:#2c3e50; color:#fff; width:220px; padding:20px; transition:all 0.3s ease; }
+    .sidebar h2 { text-align:center; margin-bottom:30px; font-size:1.4rem; letter-spacing:1px; }
+    .sidebar ul { list-style:none; }
+    .sidebar ul li { margin:15px 0; }
+    .sidebar ul li a { color:#fff; text-decoration:none; padding:10px; display:block; border-radius:5px; font-weight:bold; transition:background 0.3s ease; }
+    .sidebar ul li a:hover { background:#34495e; }
+    .main-content { flex-grow:1; padding:40px; display:flex; flex-direction:column; align-items:center; text-align:center; }
+    .card { background:#fff; padding:25px 35px; border-radius:15px; box-shadow:0 4px 15px rgba(0,0,0,0.15); margin:20px 0; width:90%; max-width:650px; transition:0.3s; text-align:center; }
+    .card:hover { transform: translateY(-5px); box-shadow:0 8px 20px rgba(0,0,0,0.2); }
+    button { padding:10px 20px; margin-top:15px; border:none; border-radius:5px; background:#1fa58b; color:#fff; font-weight:bold; cursor:pointer; transition:0.3s; }
+    button:hover { background:#178c6f; transform: scale(1.05); }
+    img { max-width:250px; border-radius:10px; margin-top:15px; }
+    .timer { font-size:1.5rem; font-weight:bold; margin-top:15px; color:#1fa58b; }
+    .progress-bar { height:20px; border-radius:10px; background:#eee; overflow:hidden; margin-top:15px; }
+    .progress { height:100%; width:0%; background:#1fa58b; text-align:center; color:#fff; line-height:20px; font-weight:bold; transition:width 0.5s ease; }
+    @media(max-width:768px){ 
+      .container{ flex-direction:column; } 
+      .sidebar{ width:100%; display:flex; overflow-x:auto; padding:10px; } 
+      .sidebar ul{ display:flex; justify-content:space-around; width:100%; } 
+      .sidebar ul li{ margin:0 10px; } 
+      .main-content{ padding:20px; } 
+    }
+    footer { 
+      text-align: center; 
+      padding: 20px; 
+      background: #2c3e50; 
+      color: #fff; 
+      margin-top: 50px; 
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+      <h2>MindBody</h2>
+      <ul>
+        <li><a href="home1.html">Home</a></li>
+        <li><a href="explore.html">Explore</a></li>
+        <li><a href="activity2.html">Activity</a></li>
+        <li><a href="meal.html">Food Plan</a></li>
+        <li><a href="exercise.html">Exercise</a></li>
+        <li><a href="track.html">Track</a></li>
+        <li><a href="Profile.html">User Profile</a></li>
+      </ul>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <h1>Exercise Dashboard</h1>
+      <div class="card" id="exercise-card">
+        <p id="exercise-text">Loading...</p>
+        <img id="exercise-img" src="" style="display:none;">
+        <div class="timer" id="exercise-timer">--</div>
+        <div class="progress-bar"><div class="progress" id="exercise-progress">0%</div></div>
+        <button onclick="nextExercise()">Next Exercise 🔄</button>
+      </div>
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>© 2025 MindBody — All Rights Reserved</p>
+  </footer>
+
+  <script>
+    const profileData = JSON.parse(localStorage.getItem("userProfile")) || {goal:'Maintain'};
+
+    const exercises = {
+      Lose: [
+        {name:"Jumping Jacks", img:"https://th.bing.com/th?&id=OVP.uwXOS12wLhBj-VslmibrjwHgFo&w=271&h=152&c=7&pid=2.1&rs=1"},
+        {name:"Burpees", img:"https://th.bing.com/th?&id=OVP.jAoIhnT45J6VaMgCt8xq4AHgFo&w=333&h=186&c=7&pid=2.1&rs=1"},
+        {name:"Mountain Climbers", img:"https://tse4.mm.bing.net/th/id/OIP.I95ZNT76yu0Kpk2mCh5C-AHaFj?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3"},
+        {name:"High Knees", img:"https://media1.popsugar-assets.com/files/thumbor/j9Ns9vUylr90E2tHl7Uie27bIvQ/fit-in/1024x1024/filters:format_auto-!!-:strip_icc-!!-/2014/10/14/845/n/1922729/8918e9c19e2f35ff_Plyometrics-High-Knee-Skips/i/High-Knees.jpg"},
+        {name:"Squat Jumps", img:"https://th.bing.com/th/id/R.fa1e610655f9e34644061db3c8cf294e?rik=V8NBDri%2bzxCxvw&riu=http%3a%2f%2fwww.fizzup.com%2ffr%2fwp-content%2fuploads%2fsites%2f5%2f2016%2f01%2farticle-squat_jump-02.png&ehk=bsrSLvMIXdRocL2RUMpsQYEOpL0J3iRIFINLoxF4tXk%3d&risl=&pid=ImgRaw&r=0"}
+      ],
+
+      Maintain: [
+        {name:"Push-ups", img:"data:image/webp;base64,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"},
+        {name:"Squats", img:"https://th.bing.com/th/id/OIP.FKOLA_q7fHESK4CA4i2V0QHaHH?w=184&h=187&c=7&r=0&o=7&cb=12&dpr=1.2&pid=1.7&rm=3"},
+        {name:"Plank", img:"https://th.bing.com/th/id/OIP.tDQn6p-D2BuE7Daf-WuGrQHaHa?w=176&h=180&c=7&r=0&o=7&cb=12&dpr=1.2&pid=1.7&rm=3"},
+        {name:"Lunges", img:"https://th.bing.com/th/id/OIP.ZAvohzcipRl6kS1hJUPqPQHaEw?w=264&h=180&c=7&r=0&o=7&cb=12&dpr=1.2&pid=1.7&rm=3"},
+        {name:"Crunches", img:"https://www.bing.com/images/search?view=detailV2&ccid=Kx4YXLa%2f&id=6EB7CE7378B2FCA8464163D4073134AAC80373D5&thid=OIP.Kx4YXLa_5pPdKTJLeh77KgHaHa&mediaurl=https%3a%2f%2fstatic.vecteezy.com%2fsystem%2fresources%2fpreviews%2f008%2f572%2f888%2foriginal%2fman-doing-crunches-abdominals-exercise-flat-illustration-isolated-on-white-background-vector.jpg&exph=1920&expw=1920&q=crunches&FORM=IRPRST&ck=E1FFDE9F78A57FAF218A8F5F07342B72&selectedIndex=6&itb=0"}
+      ],
+
+      Gain: [
+        {name:"Deadlift", img:"https://tse3.mm.bing.net/th/id/OIP.aJyIeNEbL9viIYTzqUz8SwHaH0?cb=12&rs=1&pid=ImgDetMain&o=7&rm=3"},
+        {name:"Bench Press", img:"https://www.bing.com/images/search?view=detailV2&ccid=fieIYNV4&id=DFF6F754A8D6C233ED754CCE37C78B7C89F06558&thid=OIP.fieIYNV4QvwPnpjsdlGyHQHaEK&mediaurl=https%3a%2f%2fwww.crossfit.com%2fwp-content%2fuploads%2f2019%2f05%2f01151551%2fBench-Press-Collage.png&exph=2700&expw=4800&q=bench+press&FORM=IRPRST&ck=5850FD916B732C4CD7AB1308CC91DADC&selectedIndex=1&itb=0"},
+        {name:"Pull-ups", img:"https://www.bing.com/images/search?view=detailV2&ccid=hSeEqWmw&id=D0FE435A93076F452E3F861A2B17A02B88ADE51D&thid=OIP.hSeEqWmwDLKdmt-EjveVngAAAA&mediaurl=https%3a%2f%2fspotmebro.com%2fwp-content%2fuploads%2f2017%2f06%2fpull-up1.png&exph=367&expw=474&q=pulls+up&FORM=IRPRST&ck=623C064D8E5890205AC3E2E330C4D5FA&selectedIndex=12&itb=0"},
+        {name:"Shoulder Press", img:"https://www.bing.com/images/search?view=detailV2&ccid=iN%2bWDAU1&id=34BB42EECA291EF29B3800098A9C893EA0D57DED&thid=OIP.iN-WDAU15psGnf4jnMNliAHaHa&mediaurl=https%3a%2f%2fwww.love4fitness.nl%2fwp-content%2fuploads%2f2023%2f04%2fshoulder-press.jpg&exph=1024&expw=1024&q=shoulder+presser&FORM=IRPRST&ck=F280CAA079B194901A706AA011243EB4&selectedIndex=2&itb=0"},
+        {name:"Bicep Curls", img:"https://www.bing.com/images/search?view=detailV2&ccid=LkB8snZL&id=E64A88588636253DDF9B7103AB78AF883798C529&thid=OIP.LkB8snZLKra6zijSRtwARAHaGa&mediaurl=https%3a%2f%2fwww.mensjournal.com%2fwp-content%2fuploads%2fmf%2fhammer_cheat_curl_main.jpg&exph=1038&expw=1200&q=bicep+curls&FORM=IRPRST&ck=E1DF46E853DFFD7788DD207762066298&selectedIndex=0&itb=0"}
+      ]
+    };
+
+    const exerciseTextEl = document.getElementById("exercise-text");
+    const exerciseImgEl = document.getElementById("exercise-img");
+    const timerEl = document.getElementById("exercise-timer");
+    const progressEl = document.getElementById("exercise-progress");
+
+    const list = [...exercises[profileData.goal]];
+    let currentIndex = 0;
+    const totalSets = list.length;
+    let countdown;
+    const exerciseDuration = 30; // seconds
+
+    function startTimer(){
+      let timeLeft = exerciseDuration;
+      timerEl.textContent = `Time Left: ${timeLeft}s`;
+      countdown = setInterval(()=>{
+        timeLeft--;
+        timerEl.textContent = `Time Left: ${timeLeft}s`;
+        if(timeLeft <= 0){
+          clearInterval(countdown);
+          nextExercise();
+        }
+      },1000);
+    }
+
+    function nextExercise(){
+      clearInterval(countdown);
+      if(currentIndex >= totalSets){
+        alert("🎉 Congratulations! You completed all exercises for today!");
+        currentIndex = 0;
+      }
+      const exercise = list[currentIndex];
+      exerciseTextEl.textContent = `Exercise: ${exercise.name} (${profileData.goal}-oriented) - Set ${currentIndex+1}/${totalSets}`;
+      exerciseImgEl.src = exercise.img;
+      exerciseImgEl.style.display = "block";
+      const percent = ((currentIndex)/totalSets)*100;
+      progressEl.style.width = percent + "%";
+      progressEl.textContent = `${Math.round(percent)}%`;
+      currentIndex++;
+      startTimer();
+    }
+
+    // Initialize first exercise
+    nextExercise();
+  </script>
+</body>
+</html>

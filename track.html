@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MindBody - Track</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:"Poppins", Arial, sans-serif; }
+body { background: linear-gradient(135deg, #f0f4f7, #dfe9f3); color:#2c3e50; }
+.container { display:flex; min-height:100vh; }
+.sidebar { background:#2c3e50; color:#fff; width:220px; padding:20px; transition:all 0.3s ease; }
+.sidebar h2 { text-align:center; margin-bottom:30px; font-size:1.4rem; letter-spacing:1px; }
+.sidebar ul { list-style:none; }
+.sidebar ul li { margin:15px 0; }
+.sidebar ul li a { color:#fff; text-decoration:none; padding:10px; display:block; border-radius:5px; font-weight:bold; transition:background 0.3s ease; }
+.sidebar ul li a:hover { background:#34495e; }
+.main-content { flex-grow:1; padding:40px; display:flex; flex-direction:column; align-items:center; text-align:center; }
+.card { background:#fff; padding:25px 35px; border-radius:15px; box-shadow:0 4px 10px rgba(0,0,0,0.1); margin:20px 0; width:90%; max-width:650px; text-align:center; }
+button { padding:10px 20px; margin-top:15px; border:none; border-radius:5px; background:#1fa58b; color:#fff; font-weight:bold; cursor:pointer; transition:0.3s; }
+button:hover { background:#178c6f; transform:scale(1.05); }
+.progress-bar { width:100%; height:20px; background:#eee; border-radius:10px; overflow:hidden; margin-top:10px; }
+.progress { height:100%; width:0%; background:#1fa58b; line-height:20px; color:#fff; font-weight:bold; text-align:center; transition:width 0.5s ease; }
+canvas { margin-top:20px; }
+.habit-list { list-style:none; text-align:left; margin-top:10px; }
+.habit-list li { margin:10px 0; font-size:1.1rem; }
+@media(max-width:768px){ 
+  .container{ flex-direction:column; } 
+  .sidebar{ width:100%; display:flex; overflow-x:auto; padding:10px; } 
+  .sidebar ul{ display:flex; justify-content:space-around; width:100%; } 
+  .sidebar ul li{ margin:0 10px; } 
+  .main-content{ padding:20px; } 
+}
+footer { 
+  text-align: center; 
+  padding: 20px; 
+  background: #2c3e50; 
+  color: #fff; 
+  margin-top: 50px; 
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Sidebar Navbar -->
+  <nav class="sidebar">
+    <h2>MindBody</h2>
+    <ul>
+      <li><a href="home1.html">Home</a></li>
+      <li><a href="explore.html">Explore</a></li>
+      <li><a href="activity2.html">Activity</a></li>
+      <li><a href="meal.html">Food Plan</a></li>
+      <li><a href="exercise.html">Exercise</a></li>
+      <li><a href="track.html">Track</a></li>
+      <li><a href="Profile.html">User Profile</a></li>
+    </ul>
+  </nav>
+
+  <main class="main-content">
+    <h1>Track Your Daily Health</h1>
+
+    <!-- Water Tracker -->
+    <div class="card">
+      <h2>Water Intake</h2>
+      <p id="water-text">Start tracking your water intake!</p>
+      <div class="progress-bar"><div class="progress" id="water-progress">0%</div></div>
+      <button onclick="drinkWater()">Log Water 💧</button>
+      <canvas id="waterChart"></canvas>
+    </div>
+
+    <!-- Sleep Tracker -->
+    <div class="card">
+      <h2>Sleep Tracker</h2>
+      <p id="sleep-text">Track your sleep hours 💤</p>
+      <div class="progress-bar"><div class="progress" id="sleep-progress">0%</div></div>
+      <button onclick="addSleepHour()">+1 Hour Sleep 💤</button>
+      <canvas id="sleepChart"></canvas>
+    </div>
+
+    <!-- Daily Habit Tracker -->
+    <div class="card">
+      <h2>Daily Habit Tracker</h2>
+      <ul class="habit-list">
+        <li><input type="checkbox" id="habit-water"> Drink 8 glasses of water</li>
+        <li><input type="checkbox" id="habit-sleep"> Sleep 7-8 hours</li>
+        <li><input type="checkbox" id="habit-exercise"> Exercise for 30 min</li>
+        <li><input type="checkbox" id="habit-meditation"> Meditate 10 min</li>
+      </ul>
+      <button onclick="saveHabits()">Save Today's Habits ✅</button>
+    </div>
+
+  </main>
+</div>
+
+<footer>
+  <p>© 2025 MindBody — All Rights Reserved</p>
+</footer>
+
+<script>
+// ==== Water Tracker ====
+let waterGlasses = parseInt(localStorage.getItem('waterGlasses')) || 0;
+const dailyWaterGoal = 10;
+const waterTextEl = document.getElementById("water-text");
+const waterProgressEl = document.getElementById("water-progress");
+const waterData = JSON.parse(localStorage.getItem('waterData')) || [];
+
+function drinkWater(){
+  const intake = prompt("How many glasses did you drink?");
+  const num = parseInt(intake);
+  if(isNaN(num) || num <= 0){ alert("Enter valid number!"); return; }
+
+  waterGlasses = Math.min(dailyWaterGoal, waterGlasses + num);
+  waterTextEl.textContent = `You drank ${waterGlasses} glass(es) today 💧`;
+
+  const percent = (waterGlasses / dailyWaterGoal) * 100;
+  waterProgressEl.style.width = percent + "%";
+  waterProgressEl.textContent = `${Math.round(percent)}%`;
+
+  // Push the **current intake** to the chart
+  waterData.push(num);
+  localStorage.setItem('waterGlasses', waterGlasses);
+  localStorage.setItem('waterData', JSON.stringify(waterData));
+  updateWaterChart();
+}
+
+const waterChartCtx = document.getElementById("waterChart").getContext("2d");
+const waterChart = new Chart(waterChartCtx, {
+  type:'line',
+  data:{ 
+    labels:[], 
+    datasets:[{ label:'Water Intake (glasses)', data:[], borderColor:'#1fa58b', tension:0.3, fill:false }] 
+  },
+  options:{ scales:{ y:{ beginAtZero:true, max:dailyWaterGoal } } }
+});
+
+function updateWaterChart(){
+  waterChart.data.labels = waterData.map((_,i)=>`Entry ${i+1}`);
+  waterChart.data.datasets[0].data = waterData;
+  waterChart.update();
+}
+updateWaterChart();
+
+// ==== Sleep Tracker (BAR GRAPH) ====
+let sleepHours = parseInt(localStorage.getItem('sleepHours')) || 0;
+const sleepGoal = 8;
+const sleepTextEl = document.getElementById("sleep-text");
+const sleepProgressEl = document.getElementById("sleep-progress");
+const sleepData = JSON.parse(localStorage.getItem('sleepData')) || [];
+
+function addSleepHour(){
+  sleepHours = Math.min(12, sleepHours + 1); // max 12 hrs
+  sleepTextEl.textContent = `You slept ${sleepHours} hour(s) 💤`;
+  const percent = (sleepHours / sleepGoal) * 100;
+  sleepProgressEl.style.width = percent + "%";
+  sleepProgressEl.textContent = `${Math.round(percent)}%`;
+
+  sleepData.push(1); // push **1 hour** per click
+  localStorage.setItem('sleepHours', sleepHours);
+  localStorage.setItem('sleepData', JSON.stringify(sleepData));
+  updateSleepChart();
+}
+
+const sleepChartCtx = document.getElementById("sleepChart").getContext("2d");
+const sleepChart = new Chart(sleepChartCtx, {
+  type:'bar',
+  data:{
+    labels:[],
+    datasets:[{
+      label:'Sleep Hours Per Day',
+      data:[],
+      backgroundColor:'#178c6f',
+      borderColor:'#0e5a46',
+      borderWidth:1
+    }]
+  },
+  options:{
+    scales:{
+      y:{ beginAtZero:true, max:12, title:{ display:true, text:'Hours of Sleep' } },
+      x:{ title:{ display:true, text:'Entries' } }
+    },
+    plugins:{ legend:{ display:true }, tooltip:{ enabled:true } }
+  }
+});
+
+function updateSleepChart(){
+  sleepChart.data.labels = sleepData.map((_,i)=>`Entry ${i+1}`);
+  sleepChart.data.datasets[0].data = sleepData;
+  sleepChart.update();
+}
+updateSleepChart();
+
+// ==== Habit Tracker ====
+function saveHabits(){
+  const habits = {
+    water: document.getElementById("habit-water").checked,
+    sleep: document.getElementById("habit-sleep").checked,
+    exercise: document.getElementById("habit-exercise").checked,
+    meditation: document.getElementById("habit-meditation").checked
+  };
+  localStorage.setItem('dailyHabits', JSON.stringify(habits));
+  alert("Today's habits saved! ✅");
+}
+
+// Load saved habits
+const savedHabits = JSON.parse(localStorage.getItem('dailyHabits'));
+if(savedHabits){
+  document.getElementById("habit-water").checked = savedHabits.water;
+  document.getElementById("habit-sleep").checked = savedHabits.sleep;
+  document.getElementById("habit-exercise").checked = savedHabits.exercise;
+  document.getElementById("habit-meditation").checked = savedHabits.meditation;
+}
+</script>
+</body>
+</html>

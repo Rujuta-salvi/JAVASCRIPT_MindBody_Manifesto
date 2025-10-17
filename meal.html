@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MindBody - Meal Planner</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; font-family:"Poppins", Arial, sans-serif; }
+body { background: linear-gradient(135deg,#f0f4f7,#dfe9f3); color:#2c3e50; }
+.container { display:flex; min-height:100vh; }
+.sidebar { background:#2c3e50; color:#fff; width:220px; padding:20px; transition:all 0.3s ease; }
+.sidebar h2 { text-align:center; margin-bottom:30px; font-size:1.4rem; letter-spacing:1px; }
+.sidebar ul { list-style:none; }
+.sidebar ul li { margin:15px 0; }
+.sidebar ul li a { color:#fff; text-decoration:none; padding:10px; display:block; border-radius:5px; font-weight:bold; transition:background 0.3s ease; }
+.sidebar ul li a:hover { background:#34495e; }
+.main-content { flex-grow:1; padding:40px; display:flex; flex-direction:column; align-items:center; text-align:center; }
+h1 { margin-bottom:30px; }
+.card { background:#fff; padding:25px 35px; border-radius:15px; box-shadow:0 4px 15px rgba(0,0,0,0.15); margin:20px 0; width:90%; max-width:650px; transition:0.3s; text-align:center; }
+.card:hover { transform: translateY(-5px); box-shadow:0 8px 20px rgba(0,0,0,0.2); }
+button { padding:10px 20px; margin-top:15px; border:none; border-radius:5px; background:#1fa58b; color:#fff; font-weight:bold; cursor:pointer; transition:0.3s; }
+button:hover { background:#178c6f; transform:scale(1.05); }
+.meal-img { max-width:250px; border-radius:10px; margin-top:15px; }
+.instructions { margin-top:15px; text-align:left; display:none; background:#f1f1f1; padding:15px; border-radius:10px; font-size:0.95rem; line-height:1.4; }
+.ingredients { margin-top:15px; text-align:left; display:none; }
+.ingredients li { margin-bottom:5px; }
+.category-select, .veg-select { margin-bottom:15px; padding:10px; border-radius:5px; border:1px solid #ccc; font-size:1rem; cursor:pointer; }
+@media(max-width:768px){ 
+  .container{ flex-direction:column; } 
+  .sidebar{ width:100%; display:flex; overflow-x:auto; padding:10px; } 
+  .sidebar ul{ display:flex; justify-content:space-around; width:100%; } 
+  .sidebar ul li{ margin:0 10px; } 
+  .main-content{ padding:20px; } 
+}
+footer { 
+  text-align: center; 
+  padding: 20px; 
+  background: #2c3e50; 
+  color: #fff; 
+  margin-top: 50px; 
+}
+</style>
+</head>
+<body>
+<div class="container">
+<nav class="sidebar">
+<h2>MindBody</h2>
+<ul>
+<li><a href="home1.html">Home</a></li>
+<li><a href="explore.html">Explore</a></li>
+<li><a href="activity2.html">Activity</a></li>
+<li><a href="meal.html">Food Plan</a></li>
+<li><a href="exercise.html">Exercise</a></li>
+<li><a href="track.html">Track</a></li>
+<li><a href="Profile.html">User Profile</a></li>
+</ul>
+</nav>
+
+<main class="main-content">
+<h1>Meal Planner</h1>
+
+<select id="veg-option" class="veg-select">
+<option value="Veg">Vegetarian 🥦</option>
+<option value="NonVeg">Non-Vegetarian 🍗</option>
+</select>
+
+<select id="meal-category" class="category-select">
+<option value="random">Random Meal</option>
+<option value="Breakfast">Breakfast</option>
+<option value="Lunch">Lunch</option>
+<option value="Dinner">Dinner</option>
+</select>
+
+<div class="card" id="meal-card">
+<p id="meal-text">Select options above and click "New Meal" 🔄</p>
+<img id="meal-img" class="meal-img" src="" alt="" style="display:none;">
+<div class="instructions" id="meal-instructions"></div>
+<ul class="ingredients" id="meal-ingredients"></ul>
+<button id="toggle-instructions">Show Instructions 📖</button>
+<button onclick="fetchMeal()">New Meal 🔄</button>
+</div>
+</main>
+</div>
+
+<footer>
+  <p>© 2025 MindBody — All Rights Reserved</p>
+</footer>
+
+<script>
+const mealTextEl = document.getElementById("meal-text");
+const mealImgEl = document.getElementById("meal-img");
+const instructionsEl = document.getElementById("meal-instructions");
+const ingredientsEl = document.getElementById("meal-ingredients");
+const toggleBtn = document.getElementById("toggle-instructions");
+const categorySelect = document.getElementById("meal-category");
+const vegOption = document.getElementById("veg-option");
+
+// Keywords to detect Non-Veg dishes
+const meatKeywords = ["Chicken","Pork","Fish","Shrimp","Lamb","Turkey","Bacon","Duck","Crab"];
+
+async function fetchMeal() {
+  mealTextEl.textContent = "Loading...";
+  mealImgEl.style.display = "none";
+  instructionsEl.style.display = "none";
+  ingredientsEl.style.display = "none";
+  toggleBtn.textContent = "Show Instructions 📖";
+  ingredientsEl.innerHTML = "";
+
+  const vegChoice = vegOption.value;
+  const selectedCategory = categorySelect.value;
+
+  try {
+    let meal;
+
+    // --- RANDOM MEAL ---
+    if (selectedCategory === "random") {
+      if (vegChoice === "Veg") {
+        // Vegetarian random meal
+        const res = await fetch("https://www.themealdb.com/api/json/v1/1/filter.php?c=Vegetarian");
+        const data = await res.json();
+        const randomMeal = data.meals[Math.floor(Math.random() * data.meals.length)];
+        const recipeRes = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${randomMeal.idMeal}`);
+        const recipeData = await recipeRes.json();
+        meal = recipeData.meals[0];
+      } else {
+        // Random Non-Veg meal
+        let found = false;
+        while (!found) {
+          const res = await fetch("https://www.themealdb.com/api/json/v1/1/random.php");
+          const data = await res.json();
+          const testMeal = data.meals[0];
+          if (meatKeywords.some(k => testMeal.strMeal.includes(k) || (testMeal.strCategory && testMeal.strCategory.includes(k)))) {
+            meal = testMeal;
+            found = true;
+          }
+        }
+      }
+    } 
+    // --- CATEGORY BASED MEAL ---
+    else {
+      let apiCategory;
+      if (vegChoice === "Veg") {
+        apiCategory = "Vegetarian";
+      } else {
+        // For non-veg: use Chicken category for all Lunch/Dinner/Breakfast
+        apiCategory = "Chicken";
+      }
+
+      const res = await fetch(`https://www.themealdb.com/api/json/v1/1/filter.php?c=${apiCategory}`);
+      const data = await res.json();
+      const meals = data.meals;
+      if (!meals || meals.length === 0) {
+        mealTextEl.textContent = "No meals found for this selection!";
+        return;
+      }
+
+      const randomMeal = meals[Math.floor(Math.random() * meals.length)];
+      const recipeRes = await fetch(`https://www.themealdb.com/api/json/v1/1/lookup.php?i=${randomMeal.idMeal}`);
+      const recipeData = await recipeRes.json();
+      meal = recipeData.meals[0];
+    }
+
+    displayMeal(meal);
+  } catch (err) {
+    mealTextEl.textContent = "Failed to fetch meal!";
+    console.error(err);
+  }
+}
+
+function displayMeal(meal) {
+  mealTextEl.innerHTML = `<strong>${meal.strMeal}</strong>`;
+  mealImgEl.src = meal.strMealThumb;
+  mealImgEl.style.display = "block";
+  instructionsEl.textContent = meal.strInstructions;
+
+  ingredientsEl.innerHTML = "";
+  for (let i = 1; i <= 20; i++) {
+    const ingredient = meal[`strIngredient${i}`];
+    const measure = meal[`strMeasure${i}`];
+    if (ingredient && ingredient.trim() !== "") {
+      const li = document.createElement("li");
+      li.innerHTML = `<input type="checkbox"> ${measure} ${ingredient}`;
+      ingredientsEl.appendChild(li);
+    }
+  }
+  ingredientsEl.style.display = "block";
+}
+
+toggleBtn.addEventListener("click", () => {
+  if (instructionsEl.style.display === "none") {
+    instructionsEl.style.display = "block";
+    toggleBtn.textContent = "Hide Instructions 📖";
+  } else {
+    instructionsEl.style.display = "none";
+    toggleBtn.textContent = "Show Instructions 📖";
+  }
+});
+</script>
+</body>
+</html>
